@@ -39,3 +39,4 @@ See [here](https://wiki.archlinux.org/title/Intel_graphics) for more info about 
 * https://pve.proxmox.com/wiki/PCI(e)_Passthrough#_mediated_devices_vgpu_gvt_g
 * https://3os.org/infrastructure/proxmox/gpu-passthrough/igpu-passthrough-to-vm/#proxmox-configuration-for-igpu-full-passthrough
 * https://www.thomas-krenn.com/de/wiki/Known_Issues_Proxmox_VE_8.2
+* https://www.derekseaman.com/2024/07/proxmox-ve-8-2-windows-11-vgpu-vt-d-passthrough-with-intel-alder-lake.html
