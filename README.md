@@ -28,6 +28,8 @@ GRUB_CMDLINE_LINUX_DEFAULT="quiet iommu=pt intel_iommu=on i915.enable_guc=2 vide
 
 See [here](https://wiki.archlinux.org/title/Intel_graphics) for more info about GuC.
 
+# Step 2: Extracting VGA BIOS
+
 # References
 
 * https://mae.octatile.com/index.php/intel-j4105-igdgpu-passthrough-on-proxmox/
@@ -36,3 +38,4 @@ See [here](https://wiki.archlinux.org/title/Intel_graphics) for more info about 
 * https://wiki.eofnet.lt/wiki/Frigate#Ubuntu_22.04.4_LTS_.2B_Frigate_Docker_.28ThinkCentre_M920q.29
 * https://pve.proxmox.com/wiki/PCI(e)_Passthrough#_mediated_devices_vgpu_gvt_g
 * https://3os.org/infrastructure/proxmox/gpu-passthrough/igpu-passthrough-to-vm/#proxmox-configuration-for-igpu-full-passthrough
+* https://www.thomas-krenn.com/de/wiki/Known_Issues_Proxmox_VE_8.2
