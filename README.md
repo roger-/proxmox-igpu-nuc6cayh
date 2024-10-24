@@ -10,7 +10,7 @@ If you're using Proxmox 8.2 then you may need to downgrade your kernel from 6.8.
 
 Run the following on your Proxmox host:
 
-```
+```bash
 apt install proxmox-kernel-6.5.13-5-pve-signed
 apt install proxmox-headers-6.5.13-5-pve
 proxmox-boot-tool kernel pin 6.5.13-5-pve
@@ -26,7 +26,7 @@ GRUB_CMDLINE_LINUX_DEFAULT="quiet iommu=pt intel_iommu=on i915.enable_guc=2 vide
 ```
 
 Then run
-```
+```bash
 update-grub
 reboot
 ```
@@ -42,7 +42,7 @@ For convenience I've uploaded the fixed ROM to this repo, so feel free to use an
 ## 2.1: Getting ROM
 To extract the VGA ROM, you need to disable EUFI boot in your bios and boot your Proxmox host in a Linux live distribution to run the following commands:
 
-```
+```bash
 cd /sys/bus/pci/devices/0000:00:02.0/
 echo 1 > rom
 cat rom > /tmp/intel_hd500.rom
@@ -52,7 +52,7 @@ echo 0 > rom
 ## 2.2: Fixing ROM
 Then transfer the file `intel_hd500.rom` someplace safe and reboot back into Proxmox. Next you need to compile and run `rom-fixer` (you can do this in a VM):
 
-```
+```bash
 git clone https://github.com/awilliam/rom-parser
 cd rom-parser
 make
@@ -60,7 +60,7 @@ make
 
 Then you need to modify the ROM file as follows:
 
-```
+```bash
 ./rom-fixer intel_hd500.rom
 ```
 
@@ -78,7 +78,41 @@ Last image ROM checksum is invalid, fix? (y/n): y
 
 Now copy `intel_hd500.rom` back to your Proxmox host and save it in `/usr/share/kvm`
 
-# Step 3: 
+# Step 3: Update host modules
+
+Add the following to `/etc/modules` to enable the vfio module:
+
+'''
+vfio
+vfio_iommu_type1
+vfio_pci
+vfio_virqfd
+```
+
+Then add this to `/etc/modprobe.d/vfio.conf`
+
+```
+options vfio-pci ids=8086:5a85,8086:5a98
+```
+
+Note that if you're using a different CPU these IDs may be different (check out `lspci`).
+
+Now add this to `/etc/modprobe.d/blacklist.conf`:
+
+```
+blacklist snd_hda_intel
+blacklist snd_hda_codec_hdmi
+blacklist snd_soc_skl
+blacklist snd_soc_avs
+blacklist i915
+```
+
+Now run:
+
+```bash
+update-initramfs -u -k all
+reboot
+```
 
 # References
 
