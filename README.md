@@ -82,7 +82,7 @@ Now copy `intel_hd500.rom` back to your Proxmox host and save it in `/usr/share/
 
 Add the following to `/etc/modules` to enable the vfio module:
 
-'''
+```
 vfio
 vfio_iommu_type1
 vfio_pci
