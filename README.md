@@ -37,7 +37,7 @@ See [here](https://wiki.archlinux.org/title/Intel_graphics) for more info about 
 
 Some guides (e.g. [here](https://wiki.eofnet.lt/wiki/Frigate#Proxmox_.2B_HassOS_.28Home_Assistant.29_.2B_Frigate_.28Intel_NUC6CAYH.29)) don't require this, but I couldn't get things working without it. A good overview (in Chinese) of the process is [here](https://www.bilibili.com/read/cv3038211/).
 
-For convenience I've uploaded the original and fixed ROMs to this repo, so feel free to use and skip the steps below.
+For convenience I've uploaded the fixed ROM to this repo, so feel free to use and skip the steps below.
 
 ## 2.1: Getting ROM
 To extract the VGA ROM, you need to disable EUFI boot in your bios and boot your Proxmox host in a Linux live distribution to run the following commands:
@@ -45,12 +45,12 @@ To extract the VGA ROM, you need to disable EUFI boot in your bios and boot your
 ```
 cd /sys/bus/pci/devices/0000:00:02.0/
 echo 1 > rom
-cat rom > /tmp/vga.rom
+cat rom > /tmp/intel_hd500.rom
 echo 0 > rom
 ```
 
 ## 2.2: Fixing ROM
-Then transfer the file `vga.rom` someplace safe and reboot back into Proxmox. Next you need to compile and run `rom-fixer` (you can do this in a VM):
+Then transfer the file `intel_hd500.rom` someplace safe and reboot back into Proxmox. Next you need to compile and run `rom-fixer` (you can do this in a VM):
 
 ```
 git clone https://github.com/awilliam/rom-parser
@@ -61,23 +61,22 @@ make
 Then you need to modify the ROM file as follows:
 
 ```
-./rom-fixer vga.rom
+./rom-fixer intel_hd500.rom
 ```
 
 And answer the prompts with the following:
 
 ```
-Modify vendor ID 8086? (y/n): n Modify
-device ID 0406? ( y/n): y
+Modify vendor ID 8086? (y/n): n
+Modify device ID 0406? ( y/n): y
 New device ID: 5a85
 Overwrite device ID with 5a85? (y/n): y
-    Last image
-ROM checksum is invalid, fix? (y/n): y
+Last image ROM checksum is invalid, fix? (y/n): y
 ```
 
 ## 2.3: Add ROM to Proxmox
 
-Now copy `vga.rom` back to your Proxmox host and save it in `/usr/share/kvm`
+Now copy `intel_hd500.rom` back to your Proxmox host and save it in `/usr/share/kvm`
 
 # Step 3: 
 
