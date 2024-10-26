@@ -37,10 +37,10 @@ I'm not sure if GuC helps, but see [here](https://wiki.archlinux.org/title/Intel
 
 Some guides (e.g. [here](https://wiki.eofnet.lt/wiki/Frigate#Proxmox_.2B_HassOS_.28Home_Assistant.29_.2B_Frigate_.28Intel_NUC6CAYH.29)) don't require this, but I couldn't get things working without it. A good overview (in Chinese) of the process is [here](https://www.bilibili.com/read/cv3038211/).
 
-For convenience I've uploaded the fixed ROM to this repo, so feel free to use and skip the steps below.
+For convenience I've uploaded the fixed ROM to [this repo](https://github.com/roger-/proxmox-igpu-nuc6cayh/blob/main/intel_hd500.rom), so feel free to use and skip the steps below.
 
 ## 2.1: Getting ROM
-To extract the VGA ROM, you need to disable EUFI boot in your bios and boot your Proxmox host in a Linux live distribution to run the following commands:
+To extract the VGA ROM, you need to disable EUFI boot in your NUC BIOS and boot the physical machine in a Linux live distribution. Then get to a console and run the following commands:
 
 ```bash
 cd /sys/bus/pci/devices/0000:00:02.0/
@@ -49,8 +49,10 @@ cat rom > /tmp/intel_hd500.rom
 echo 0 > rom
 ```
 
+Then transfer the file `intel_hd500.rom` someplace safe (e.g. using `scp` or a USB flash drive), revert your BIOS settings and reboot back into Proxmox.
+
 ## 2.2: Fixing ROM
-Then transfer the file `intel_hd500.rom` someplace safe and reboot back into Proxmox. Next you need to compile and run `rom-fixer` (you can do this in a VM):
+Next you need to compile and run `rom-fixer` (you can do this in a Proxmox VM):
 
 ```bash
 git clone https://github.com/awilliam/rom-parser
@@ -111,7 +113,7 @@ blacklist snd_soc_avs
 blacklist i915
 ```
 
-Now run:
+I'm not sure if blacklisting i915 is necessary, but it works for me. Now run:
 
 ```bash
 update-initramfs -u -k all
@@ -130,7 +132,7 @@ After rebooting, run `dmesg | grep iomm` on your Proxmox host and verify you see
 [    0.533142] pci 0000:00:0f.0: Adding to iommu group 3
 ```
 
-Next run `lspci -v` and verify you see something like this:
+Next run `lspci -v` and you should see something like this:
 
 ```
 00:02.0 VGA compatible controller: Intel Corporation HD Graphics 500 (rev 0b) (prog-if 00 [VGA controller])
@@ -151,6 +153,7 @@ Next run `lspci -v` and verify you see something like this:
         Kernel driver in use: vfio-pci
         Kernel modules: i915
 ```
+
 The `Kernel driver in use: vfio-pci` part is important.
 
 # Step 5: Configure VM
@@ -164,7 +167,7 @@ args: -device vfio-pci,host=00:02.0,addr=0x02,x-igd-gms=4,romfile=intel_hd500.ro
 vga: none
 ```
 
-You can now boot up your VM, but note the KVM console won't work so use SSH/VNC.
+You can now boot up your VM, but note the KVM console won't work so use SSH/VNC. If things work, your new VM should report several devices when you run `ls /dev/dri`.
 
 # References
 
