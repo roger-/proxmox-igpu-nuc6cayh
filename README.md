@@ -80,6 +80,8 @@ Now copy `intel_hd500.rom` back to your Proxmox host and save it in `/usr/share/
 
 # Step 3: Update host modules
 
+## 3.1: Configure vfio
+
 Add the following to `/etc/modules` to enable the vfio module:
 
 ```
@@ -97,6 +99,8 @@ options vfio-pci ids=8086:5a85,8086:5a98
 
 Note that if you're using a different CPU these IDs may be different (check out `lspci`).
 
+## 3.2: Blacklist modules
+
 Now add this to `/etc/modprobe.d/blacklist.conf`:
 
 ```
@@ -113,6 +117,54 @@ Now run:
 update-initramfs -u -k all
 reboot
 ```
+
+# Step 4: Verify configuration
+
+After rebooting, run `dmesg | grep iomm` on your Proxmox host and verify you see something like this:
+
+```
+[    0.441307] iommu: Default domain type: Passthrough (set via kernel command line)
+[    0.532935] pci 0000:00:02.0: Adding to iommu group 0
+[    0.533081] pci 0000:00:00.0: Adding to iommu group 1
+[    0.533108] pci 0000:00:0e.0: Adding to iommu group 2
+[    0.533142] pci 0000:00:0f.0: Adding to iommu group 3
+```
+
+Next run `lspci -v` and verify you see something like this:
+
+```
+00:02.0 VGA compatible controller: Intel Corporation HD Graphics 500 (rev 0b) (prog-if 00 [VGA controller])
+        DeviceName:  CPU
+        Subsystem: Intel Corporation HD Graphics 500
+        Flags: bus master, fast devsel, latency 0, IRQ 131, IOMMU group 0
+        Memory at 90000000 (64-bit, non-prefetchable) [size=16M]
+        Memory at 80000000 (64-bit, prefetchable) [size=256M]
+        I/O ports at f000 [size=64]
+        Expansion ROM at 000c0000 [virtual] [disabled] [size=128K]
+        Capabilities: [40] Vendor Specific Information: Len=0c <?>
+        Capabilities: [70] Express Root Complex Integrated Endpoint, MSI 00
+        Capabilities: [ac] MSI: Enable+ Count=1/1 Maskable- 64bit-
+        Capabilities: [d0] Power Management version 2
+        Capabilities: [100] Process Address Space ID (PASID)
+        Capabilities: [200] Address Translation Service (ATS)
+        Capabilities: [300] Page Request Interface (PRI)
+        Kernel driver in use: vfio-pci
+        Kernel modules: i915
+```
+The `Kernel driver in use: vfio-pci` part is important.
+
+# Step 5: Configure VM
+
+You should be all set to create a VM as usual, but use SeaBIOS instead of EUFI (latter may cause issues). After setting it up, power it off and modify the VM settings as follows.
+
+Determine your VM ID (something like 101) and edit the file `/etc/pve/qemu-server/<VM-ID>.conf` to add/modify the following line:
+
+```
+args: -device vfio-pci,host=00:02.0,addr=0x02,x-igd-gms=4,romfile=intel_hd500.rom,x-vga=on
+vga: none
+```
+
+You can now boot up your VM, but note the KVM console won't work so use SSH/VNC.
 
 # References
 
