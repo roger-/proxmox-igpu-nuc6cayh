@@ -1,6 +1,6 @@
 # Introduction
 
-This is a guide for configuring Proxmox 8.2 iGPU passthrough on an Intel NUC6CAYH (9th generation [Apollo Lake J3455](https://www.intel.com/content/www/us/en/products/sku/95594/intel-celeron-processor-j3455-2m-cache-up-to-2-30-ghz/specifications.html)). My goal is to host headless Linux VMs with hardware accelerated video encoding, which may not match other usecases (e.g. running Windows). 
+This is a guide for configuring Proxmox 8.2 iGPU passthrough on an Intel NUC6CAYH (9th generation [Apollo Lake J3455](https://www.intel.com/content/www/us/en/products/sku/95594/intel-celeron-processor-j3455-2m-cache-up-to-2-30-ghz/specifications.html)). My goal is to host headless Linux VMs with hardware accelerated video encoding in GVT-d mode (full device passthrough), which may not match other usecases (e.g. running Windows). 
 
 Unfortunately there are many permutations of different options that can be applied, and getting things working isn't straightforward (nor do I fully understand everything). Things are also not completely stable, so proceed at your own risk.
 
@@ -31,7 +31,7 @@ update-grub
 reboot
 ```
 
-See [here](https://wiki.archlinux.org/title/Intel_graphics) for more info about GuC.
+I'm not sure if GuC helps, but see [here](https://wiki.archlinux.org/title/Intel_graphics) for more info.
 
 # Step 2: Extracting VGA BIOS
 
