@@ -4,9 +4,11 @@ This is a guide for configuring Proxmox 8.2 iGPU passthrough on an Intel NUC6CAY
 
 Unfortunately there are many permutations of different options that can be applied, and getting things working isn't straightforward (nor do I fully understand everything). Things are also not completely stable, so proceed at your own risk.
 
-# Step 0: Downgrade kernel
+# Step 0: BIOS Configuration and Downgrade kernel
 
-If you're using Proxmox 8.2 then you may need to downgrade your kernel from 6.8.x due to issues with Intel passthrough support (see [here](https://www.reddit.com/r/Proxmox/comments/1cg2yzl/question_about_downgrading_to_65133pvesigned/), [here](https://www.thomas-krenn.com/de/wiki/Known_Issues_Proxmox_VE_8.2) and [here](https://forum.proxmox.com/threads/proxmox-8-2-kernel-6-8-breaks-igpu-passthrough-for-uhd630.146256/)). I encountered an issue where Proxmox wouldn't boot and I'd have to disable various kernel options at bootup. With an older kernel there were no issues at all.
+First make sure UEFI and all virtualization optionas are enabled in your BIOS (see `Advanced > Security > Security Features`). You should enable UEFI before installing Proxmox, or things may break.
+
+If you're using Proxmox 8.2 then you should downgrade your kernel from 6.8.x due to issues with Intel passthrough support (see [here](https://www.reddit.com/r/Proxmox/comments/1cg2yzl/question_about_downgrading_to_65133pvesigned/), [here](https://www.thomas-krenn.com/de/wiki/Known_Issues_Proxmox_VE_8.2) and [here](https://forum.proxmox.com/threads/proxmox-8-2-kernel-6-8-breaks-igpu-passthrough-for-uhd630.146256/)). I encountered an issue where Proxmox wouldn't boot and I'd have to disable various kernel options at bootup. With an older kernel there were no issues at all.
 
 Run the following on your Proxmox host:
 
@@ -33,6 +35,12 @@ reboot
 
 I'm not sure if GuC helps, but see [here](https://wiki.archlinux.org/title/Intel_graphics) for more info.
 
+**TODO**: Might be necessary to enable GuC in the VM under `/etc/modprobe.d/i915.conf` with:
+
+```
+options i915 enable_guc=2
+```
+
 # Step 2: Extracting VGA BIOS
 
 Some guides (e.g. [here](https://wiki.eofnet.lt/wiki/Frigate#Proxmox_.2B_HassOS_.28Home_Assistant.29_.2B_Frigate_.28Intel_NUC6CAYH.29)) don't require this, but I couldn't get things working without it. A good overview (in Chinese) of the process is [here](https://www.bilibili.com/read/cv3038211/).
@@ -40,7 +48,7 @@ Some guides (e.g. [here](https://wiki.eofnet.lt/wiki/Frigate#Proxmox_.2B_HassOS_
 For convenience I've uploaded the fixed ROM to [this repo](https://github.com/roger-/proxmox-igpu-nuc6cayh/blob/main/intel_hd500.rom), so feel free to use and skip the steps below.
 
 ## 2.1: Getting ROM
-To extract the VGA ROM, you need to disable EUFI boot in your NUC BIOS and boot the physical machine in a Linux live distribution. Then get to a console and run the following commands:
+To extract the VGA ROM, you need to temporarily disable EUFI boot in your NUC BIOS and boot the physical machine in a Linux live distribution. Then get to a console and run the following commands:
 
 ```bash
 cd /sys/bus/pci/devices/0000:00:02.0/
@@ -168,6 +176,16 @@ vga: none
 ```
 
 You can now boot up your VM, but note the KVM console won't work so use SSH/VNC. If things work, your new VM should report several devices when you run `ls /dev/dri`.
+
+# Testing
+
+Run `dmesg | grep i915` and make sure there are no errors.
+
+I used ffmpeg to do my testing, but most builds (including those in Debian and Alpine) don't seem to work with QSV acceleration. After installing Docker, I got the following to work:
+
+```bash
+docker run --rm -it --device=/dev/dri -v $(pwd):/workdir akashisn/ffmpeg:7.0.2 -y -loglevel verbose -init_hw_device qsv:hw -hwaccel qsv -hwaccel_output_format qsv -extra_hw_frames 32 -i video.mp4 -c:v h264_qsv -f mp4 input_video.mp4;
+```
 
 # References
 
