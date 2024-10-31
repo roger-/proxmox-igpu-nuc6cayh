@@ -181,6 +181,8 @@ You can now boot up your VM, but note the KVM console won't work so use SSH/VNC.
 
 Run `dmesg | grep i915` and make sure there are no errors.
 
+On Alpine you may need to install the packages `linux-firmware-i915` and `intel-media-driver`. On Debian you may also need `intel-media-va-driver-non-free`.
+
 I used ffmpeg to do my testing, but most builds (including those in Debian and Alpine) don't seem to work with QSV acceleration. After installing Docker, I got the following to work:
 
 ```bash
