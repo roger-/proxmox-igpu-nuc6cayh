@@ -33,13 +33,7 @@ update-grub
 reboot
 ```
 
-I'm not sure if GuC helps, but see [here](https://wiki.archlinux.org/title/Intel_graphics) for more info.
-
-**TODO**: Might be necessary to enable GuC in the VM under `/etc/modprobe.d/i915.conf` with:
-
-```
-options i915 enable_guc=2
-```
+I'm not sure if GuC is necessary here but it prevents some VM warnings later, see [here](https://wiki.archlinux.org/title/Intel_graphics) for more info.
 
 # Step 2: Extracting VGA BIOS
 
@@ -121,7 +115,7 @@ blacklist snd_soc_avs
 blacklist i915
 ```
 
-I'm not sure if blacklisting i915 is necessary, but it works for me. Now run:
+Now run:
 
 ```bash
 update-initramfs -u -k all
@@ -164,7 +158,7 @@ Next run `lspci -v` and you should see something like this:
 
 The `Kernel driver in use: vfio-pci` part is important.
 
-# Step 5: Configure VM
+# Step 5: Create VM
 
 You should be all set to create a VM as usual, but use SeaBIOS instead of EUFI (latter may cause issues). After setting it up, power it off and modify the VM settings as follows.
 
@@ -175,15 +169,49 @@ args: -device vfio-pci,host=00:02.0,addr=0x02,x-igd-gms=4,romfile=intel_hd500.ro
 vga: none
 ```
 
-You can now boot up your VM, but note the KVM console won't work so use SSH/VNC. If things work, your new VM should report several devices when you run `ls /dev/dri`.
+You can now boot up your VM, but note the KVM console won't work, so use SSH/VNC or enable serial access. 
 
-# Testing
+# Step 6: Guest configuration
 
-Run `dmesg | grep i915` and make sure there are no errors.
+I noticed a few (possible benign) warnings from `dmesg`, and configuring GuC seemed to help. So inside the VM, create `/etc/modprobe.d/i915.conf` with:
 
-On Alpine you may need to install the packages `linux-firmware-i915` and `intel-media-driver`. On Debian you may also need `intel-media-va-driver-non-free`.
+```
+options i915 enable_guc=2
+```
 
-I used ffmpeg to do my testing, but most builds (including those in Debian and Alpine) don't seem to work with QSV acceleration. After installing Docker, I got the following to work:
+Then run:
+
+```bash
+update-initramfs -u -k all
+reboot
+```
+
+After rebooting, run the following in the VM and verify the output matches:
+
+```
+$ ls /dev/dri
+by-path  card0  renderD128
+```
+
+Also run this and verify there are no errors:
+
+```
+dmesg | grep i915
+```
+
+# ffmpeg setup
+
+On Alpine you may need to install the packages `linux-firmware-i915` and `intel-media-driver`. I'm not sure if QSV works however.
+
+On Debian you need the Intel media drivers. First you need to modify `/etc/apt/sources.list` and make sure each line has `non-free-firmware non-free`. Then run:
+
+```
+sudo apt update
+sudo apt install intel-media-va-driver-non-free
+sudo usermod -aG video $USER
+```
+
+Alternatively, if you have Docker installed, you can also test things by running:
 
 ```bash
 docker run --rm -it --device=/dev/dri -v $(pwd):/workdir akashisn/ffmpeg:7.0.2 -y -loglevel verbose -init_hw_device qsv:hw -hwaccel qsv -hwaccel_output_format qsv -extra_hw_frames 32 -i video.mp4 -c:v h264_qsv -f mp4 input_video.mp4;
