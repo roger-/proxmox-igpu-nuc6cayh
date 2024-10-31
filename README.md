@@ -169,6 +169,8 @@ args: -device vfio-pci,host=00:02.0,addr=0x02,x-igd-gms=4,romfile=intel_hd500.ro
 vga: none
 ```
 
+Note that `4` in `x-igd-gms=4` refers to 4 x 32MB of reserved iGPU memory. Not sure if increasing helps, but you can try `x-igd-gms=2` for the default value of 64 MB.
+
 You can now boot up your VM, but note the KVM console won't work, so use SSH/VNC or enable serial access. 
 
 # Step 6: Guest configuration
