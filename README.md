@@ -210,7 +210,7 @@ On Debian you need the Intel media drivers. First you need to modify `/etc/apt/s
 ```
 sudo apt update
 sudo apt install intel-media-va-driver-non-free
-sudo usermod -aG video $USER
+sudo usermod -aG render $USER
 ```
 
 Alternatively, if you have Docker installed, you can also test things by running:
